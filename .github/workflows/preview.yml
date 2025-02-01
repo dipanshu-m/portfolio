@@ -1,50 +1,42 @@
-name: 'Netlify PR Preview Deploy'
+name: Deploy Preview
 
 on:
   pull_request:
-    branches:
-      - main # Triggers when a PR is opened against `main`
-    types: [opened, synchronize, reopened]
+    branches: [main]
 
 jobs:
-  deploy:
-    permissions:
-      pull-requests: write
-
-    name: 'Deploy PR Preview to Netlify'
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - run: npm install
+      - run: npm run build
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Set NODE_ENV to Development
-        run: echo "NODE_ENV=development" >> $GITHUB_ENV
-
-      - name: Build for Preview
-        run: npm run build # This will now use NODE_ENV=development
-
-      - name: Deploy to Netlify Preview
-        id: deploy
-        uses: South-Paw/action-netlify-cli@v2
-        with:
-          args: deploy --dir=dist --alias=pr-${{ github.event.pull_request.number }}
+      # Deploy to Vercel
+      - name: Deploy to Vercel
+        id: vercel_deploy
+        run: |
+          npm install -g vercel
+          DEPLOY_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --confirm)
+          echo "Vercel deployment URL: $DEPLOY_URL"
+          echo "::set-output name=vercel_url::$DEPLOY_URL"
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NODE_ENV: development
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - name: Comment on PR with Preview URL
-        uses: actions/github-script@v6
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: dist
+
+      - name: Comment on PR with deployment URL
+        uses: actions/github-script@v4
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.rest.issues.createComment({
+            github.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: `🚀 **Preview URL:** [View Deployment](https://pr-${context.payload.pull_request.number}--${process.env.NETLIFY_SITE_ID}.netlify.app)`
-            });
+              body: 'Preview deployment is live at: ' + '${{ steps.vercel_deploy.outputs.vercel_url }}'
+            })
