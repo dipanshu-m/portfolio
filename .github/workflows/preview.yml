@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  pull-requests: write # Grant write access to pull requests
+  pull-requests: write
 
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
       - name: Build Project
         run: NODE_ENV=development npm run build
         env:
-          NODE_ENV: development # Ensure that NODE_ENV is set to development for the build process
+          NODE_ENV: development
 
       - name: Deploy to Vercel
         id: vercel_deploy
