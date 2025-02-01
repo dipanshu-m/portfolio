@@ -34,18 +34,24 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NODE_ENV: development
 
-      - name: Comment on PR with Preview Link
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const previewUrl = `https://${{ secrets.NETLIFY_SITE_ID }}--pr-${prNumber}.netlify.app`;
-            const comment = `The preview for this PR is available [here](${previewUrl}).`;
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: comment
-            });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch Latest Deployment URL
+        run: |
+          echo "Fetching latest deployment URL from Netlify"
+          DEPLOY_URL=$(curl -s -H "Authorization: Bearer ${{ secrets.NETLIFY_AUTH_TOKEN }}" \
+            "https://api.netlify.com/api/v1/sites/${{ secrets.NETLIFY_SITE_ID }}/deploys" | jq -r '.[0].url')
+
+          echo "The latest deployment URL is: $DEPLOY_URL"
+          echo "DEPLOY_URL=$DEPLOY_URL" >> $GITHUB_ENV
+
+          - name: Comment on PR with Preview URL
+          uses: actions/github-script@v4
+          with:
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+              const deployUrl = process.env.DEPLOY_URL;
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `Preview URL: ${deployUrl}`
+              })
