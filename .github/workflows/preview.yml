@@ -13,15 +13,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: npm install
-      - run: NODE_ENV=development npm run build
-        env:
-          NODE_ENV: development
 
-      - name: Set NODE_ENV to development for preview
-        run: |
-          export NODE_ENV=development
-          echo "NODE_ENV is set to $NODE_ENV"
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: NODE_ENV=development npm run build
+        env:
+          NODE_ENV: development # Ensure that NODE_ENV is set to development for the build process
 
       # Deploy to Vercel
       - name: Deploy to Vercel
@@ -39,6 +38,7 @@ jobs:
           name: build-artifacts
           path: dist
 
+      # Comment on PR with the deployment URL
       - name: Comment on PR with deployment URL
         uses: actions/github-script@v3
         with:
@@ -49,5 +49,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Preview URL: ${deployUrl}`
+              body: `Preview URL: ${deployUrl}`  
             });
