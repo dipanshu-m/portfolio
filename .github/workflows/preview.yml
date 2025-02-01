@@ -37,4 +37,4 @@ jobs:
         run: |
           NEW_URL="https://preview-dipanshu-portfolio-pr-${{ github.event.pull_request.number }}.netlify.app"
           echo "Preview URL: $NEW_URL"
-          echo "Preview URL for this PR is: $NEW_URL" >> $GITHUB_ENV
+          echo "NEW_URL=$NEW_URL" >> $GITHUB_ENV
