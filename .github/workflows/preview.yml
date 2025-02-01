@@ -39,16 +39,17 @@ jobs:
           name: build-artifacts
           path: dist
 
-      - name: Comment on PR with deployment URL
-        uses: actions/github-script@v3
+      - name: Create a comment with deployment link
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const issue_number = context.issue.number;  
-            const deployUrl = process.env.VERCEL_URL;  
+            const prNumber = context.payload.pull_request.number;
+            const deploymentUrl = process.env.VERCEL_URL;
+            const comment = `Preview deployment URL: ${deploymentUrl}`;
             await github.rest.issues.createComment({
+              issue_number: prNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issue_number, 
-              body: `Preview URL: ${deployUrl}` 
+              body: comment,
             });
