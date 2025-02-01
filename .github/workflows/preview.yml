@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  pull-requests: write # Grant write access to pull requests
+
 jobs:
   build:
     runs-on: ubuntu-latest
