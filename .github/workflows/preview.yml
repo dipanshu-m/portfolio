@@ -25,6 +25,7 @@ jobs:
         run: npm run build # This will now use NODE_ENV=development
 
       - name: Deploy to Netlify Preview
+        id: deploy
         uses: South-Paw/action-netlify-cli@v2
         with:
           args: deploy --dir=dist --alias=pr-${{ github.event.pull_request.number }}
@@ -33,8 +34,18 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NODE_ENV: development
 
-      - name: Output Preview URL
-        run: |
-          NEW_URL="https://preview-dipanshu-portfolio-pr-${{ github.event.pull_request.number }}.netlify.app"
-          echo "Preview URL: $NEW_URL"
-          echo "NEW_URL=$NEW_URL" >> $GITHUB_ENV
+      - name: Comment on PR with Preview Link
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://${{ secrets.NETLIFY_SITE_ID }}--pr-${prNumber}.netlify.app`;
+            const comment = `The preview for this PR is available [here](${previewUrl}).`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
