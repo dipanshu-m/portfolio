@@ -1,12 +1,46 @@
-name: 'Deploy to GH'
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
-      - main
+      - main # Deploy from main branch
 
 jobs:
-    deploy:
-        runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Create Build
+        run: npm run build
+
+      - name: Upload Build Artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./dist
+
+  # Deploy job
+  deploy:
+    needs: build # Depends on the build job
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write # Allow deployment to GitHub Pages
+      id-token: write # Required for verifying deployment
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # Deployment URL
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
