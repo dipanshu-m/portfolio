@@ -1,0 +1,6 @@
+[build]
+  command = "NODE_ENV=development npm run build"
+  publish = "dist"
+
+[context.deploy-preview]
+  environment = { NODE_ENV = "development" }

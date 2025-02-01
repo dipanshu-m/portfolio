@@ -1,0 +1,55 @@
+name: Deploy Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  pull-requests: write # Grant write access to pull requests
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: NODE_ENV=development npm run build
+        env:
+          NODE_ENV: development # Ensure that NODE_ENV is set to development for the build process
+
+      - name: Deploy to Vercel
+        id: vercel_deploy
+        run: |
+          npm install -g vercel
+          DEPLOY_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} --prod --confirm)
+          echo "Vercel deployment URL: $DEPLOY_URL"
+          echo "VERCEL_URL=$DEPLOY_URL" >> $GITHUB_ENV
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist
+
+      - name: Create a comment with deployment link
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const deploymentUrl = process.env.VERCEL_URL;
+            const comment = `Preview deployment URL: ${deploymentUrl}`;
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment,
+            });
