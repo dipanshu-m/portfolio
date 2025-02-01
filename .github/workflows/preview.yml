@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
       - name: Install Dependencies
         run: npm install
@@ -22,7 +23,6 @@ jobs:
         env:
           NODE_ENV: development # Ensure that NODE_ENV is set to development for the build process
 
-      # Deploy to Vercel
       - name: Deploy to Vercel
         id: vercel_deploy
         run: |
@@ -33,21 +33,22 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: dist
 
-      # Comment on PR with the deployment URL
       - name: Comment on PR with deployment URL
         uses: actions/github-script@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const deployUrl = process.env.VERCEL_URL; 
+            const issue_number = context.issue.number;  
+            const deployUrl = process.env.VERCEL_URL;  
             await github.rest.issues.createComment({
-              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `Preview URL: ${deployUrl}`  
+              issue_number: issue_number, 
+              body: `Preview URL: ${deployUrl}` 
             });
